@@ -24,7 +24,9 @@ export default defineConfig(({ mode }) => {
         }
       },
       build: {
-        outDir: 'docs'
+        outDir: 'docs',
+        // Keep manually maintained CSV files in docs/ across builds.
+        emptyOutDir: false
       }
     };
 });

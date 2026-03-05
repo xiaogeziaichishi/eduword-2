@@ -35,12 +35,52 @@ const parseCsv = (csvText: string): LocalDictionary => {
 
 let localDictLoader: Promise<LocalDictionary> | null = null;
 
+const resolveCsvFilenameFromUrl = (): string => {
+  const defaultCsv = "word_translations.csv";
+
+  if (typeof window === "undefined") return defaultCsv;
+
+  const url = new URL(window.location.href);
+  const queryCsv = url.searchParams.get("csv")?.trim();
+  if (queryCsv) {
+    return queryCsv.endsWith(".csv") ? queryCsv : `${queryCsv}.csv`;
+  }
+
+  const baseUrl = (import.meta.env.BASE_URL ?? "/").replace(/^\/|\/$/g, "");
+  const path = url.pathname.replace(/^\/|\/$/g, "");
+  const segments = path ? path.split("/") : [];
+
+  const appSegments = baseUrl ? baseUrl.split("/").filter(Boolean) : [];
+  const effectiveSegments = segments.slice(appSegments.length);
+  const firstSegment = effectiveSegments[0]?.trim();
+
+  if (firstSegment && /^[A-Za-z0-9_-]+$/.test(firstSegment)) {
+    return `${firstSegment}.csv`;
+  }
+
+  return defaultCsv;
+};
+
 export const loadLocalDictionary = (): Promise<LocalDictionary> => {
   if (!localDictLoader) {
-    localDictLoader = fetch(`${import.meta.env.BASE_URL ?? "/"}word_translations.csv`)
+    const base = import.meta.env.BASE_URL ?? "/";
+    const csvFilename = resolveCsvFilenameFromUrl();
+    const primaryCsvPath = `${base}${csvFilename}`;
+    const fallbackCsvPath = `${base}word_translations.csv`;
+
+    localDictLoader = fetch(primaryCsvPath)
       .then(res => {
-        if (!res.ok) throw new Error("Failed to load local dictionary");
+        if (!res.ok) {
+          throw new Error(`Failed to load CSV: ${csvFilename}`);
+        }
         return res.text();
+      })
+      .catch(async () => {
+        const fallbackRes = await fetch(fallbackCsvPath);
+        if (!fallbackRes.ok) {
+          throw new Error("Failed to load fallback local dictionary");
+        }
+        return fallbackRes.text();
       })
       .then(parseCsv)
       .catch(err => {
