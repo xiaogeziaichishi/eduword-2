@@ -19,8 +19,7 @@
 
 1. 执行 `npm run build:custom` 是使用域名访问 或者`npm run build` 不需要使用域名，打包生成docs的文件夹。
 2. 上传github远程。
-3. 使用域名访问：https://eduword.bingxiangtie.top
-
+3. 使用域名访问：https://eduword-2.bingxiangtie.top/
 ## 按路径读取不同 CSV
 
 现在支持按 URL 路径自动读取对应 CSV：
